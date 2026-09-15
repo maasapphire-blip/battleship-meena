@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { Board, coordLabel } from './components/Board'
 import type { Ghost } from './components/Board'
 import { FleetTracker } from './components/FleetTracker'
+import { Icon } from './components/Icon'
 import { StatusBar } from './components/StatusBar'
 import { canPlace, hitsOn, shotsFired } from './game/board'
 import { allShipsPlaced, createGame, currentShipSpec, gameReducer } from './game/reducer'
@@ -89,7 +90,9 @@ export default function App() {
   return (
     <div className="app">
       <header className="app__header">
-        <h1>⚓ Battleship</h1>
+        <h1>
+          <Icon name="anchor" /> Battleship
+        </h1>
         {state.phase !== 'placing' && (
           <button type="button" className="btn btn--ghost" onClick={() => dispatch({ type: 'RESET' })}>
             New game
@@ -143,10 +146,10 @@ export default function App() {
                 </select>
               </label>
               <button type="button" className="btn" onClick={() => dispatch({ type: 'ROTATE' })}>
-                ⟳ Rotate {coarsePointer ? '' : '(R)'} · {state.placing.orientation === 'h' ? 'Horizontal' : 'Vertical'}
+                <Icon name="rotate" /> Rotate {coarsePointer ? '' : '(R)'} · {state.placing.orientation === 'h' ? 'Horizontal' : 'Vertical'}
               </button>
               <button type="button" className="btn" onClick={() => dispatch({ type: 'RANDOMIZE' })}>
-                🎲 Randomize
+                <Icon name="dice" /> Randomize
               </button>
               <button
                 type="button"
@@ -195,7 +198,7 @@ export default function App() {
                   onClick={() => aim && fireAt(aim)}
                   data-testid="fire"
                 >
-                  🔥 {aim ? `FIRE at ${coordLabel(aim)}` : 'Tap a cell to aim'}
+                  <Icon name="fire" /> {aim ? `FIRE at ${coordLabel(aim)}` : 'Tap a cell to aim'}
                 </button>
               )}
             </div>
@@ -216,7 +219,9 @@ export default function App() {
           {state.phase === 'over' && !showBoards && (
             <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="gameover-title">
               <div className="modal">
-                <div className="modal__icon">{state.winner === 'player' ? '🏆' : '💥'}</div>
+                <div className={`modal__icon ${state.winner === 'player' ? 'modal__icon--win' : 'modal__icon--lose'}`}>
+                  <Icon name={state.winner === 'player' ? 'trophy' : 'burst'} />
+                </div>
                 <h2 id="gameover-title" data-testid="gameover-title">
                   {state.winner === 'player' ? 'Victory!' : 'Defeat'}
                 </h2>

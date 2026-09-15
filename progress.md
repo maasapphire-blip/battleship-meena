@@ -32,7 +32,9 @@ npm test           -> 37 tests pass (4 files)
 npm run build      -> pass (dist/ ~238 kB JS, 6.7 kB CSS)
 ```
 
-Manual check in Chrome (desktop, 1024x768): placement with ghost preview, rotate via `R`, randomize, start, 8 shots incl. one hit, AI replies landing on own ships with flame — all as expected. Mobile layout not yet checked in a real device/emulator.
+Manual check in Chrome (desktop, 1024x768): placement with ghost preview, rotate via `R`, randomize, start, 8 shots incl. one hit, AI replies landing on own ships with flame — all as expected.
+
+Recorded play-test (testing agent, Chrome on Linux): full desktop game to Victory (54 shots), New game mid-battle, Play again, and 390x844 touch emulation (stacked boards, tap-to-aim then FIRE) all passed; no console errors. One cosmetic defect found and fixed (bugs.md D3: emoji icons → inline SVG). Not yet tested on a physical phone; Defeat overlay copy not exercised.
 
 ## How to play (current)
 

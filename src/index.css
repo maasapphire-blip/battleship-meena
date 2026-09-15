@@ -469,6 +469,17 @@ h1 {
 }
 .modal__icon {
   font-size: 48px;
+  line-height: 1;
+}
+.modal__icon--win {
+  color: var(--accent);
+}
+.modal__icon--lose {
+  color: var(--hit);
+}
+.icon {
+  display: inline-block;
+  vertical-align: -0.125em;
 }
 .modal h2 {
   margin: 0 0 6px;
