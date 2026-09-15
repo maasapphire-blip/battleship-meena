@@ -4,7 +4,7 @@ True state of the project after each run. Updated at the end of every Devin run.
 Legend: `[x]` done and verified · `[~]` partially done · `[ ]` not started
 
 **Last updated:** 2026-09-15 (run 1)
-**Play link:** dev preview only (see "How to play" below). No Cloud Run deployment yet.
+**Play link (dev preview, this session only):** https://5173--70635c9fe8a9474a840f081513216c63.preview.devinapps.com — requires being signed in to Devin. No Cloud Run deployment yet.
 
 ## Milestone status
 
