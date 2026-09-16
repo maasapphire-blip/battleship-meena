@@ -9,7 +9,7 @@ import { allShipsPlaced, createGame, currentShipSpec, gameReducer } from './game
 import type { GameState, ShotEvent } from './game/reducer'
 import { isSunk, makeShip } from './game/ships'
 import { FLEET } from './game/types'
-import type { Coord, Difficulty } from './game/types'
+import type { Coord, Difficulty, Ship } from './game/types'
 import { useMediaQuery } from './hooks/useMediaQuery'
 
 const AI_DELAY_MS = 650
@@ -27,6 +27,7 @@ export default function App() {
   const [state, dispatch] = useReducer(gameReducer, undefined, initialGame)
   const [hover, setHover] = useState<Coord | null>(null)
   const [aim, setAim] = useState<Coord | null>(null)
+  const [scoreboardOpen, setScoreboardOpen] = useState(true)
   const coarsePointer = useMediaQuery('(pointer: coarse)')
 
   // AI replies after a short delay so the player can see their own shot land.
@@ -48,6 +49,7 @@ export default function App() {
 
   useEffect(() => {
     if (state.phase !== 'playing') setAim(null)
+    if (state.phase === 'over') setScoreboardOpen(true)
   }, [state.phase])
 
   const ghost: Ghost | null = useMemo(() => {
@@ -84,6 +86,31 @@ export default function App() {
   const enemySunk = state.enemy.ships.filter(isSunk).length
   const enemyAfloat = FLEET.length - enemySunk
   const gameOver = state.phase === 'over'
+  const won = state.winner === 'player'
+  const resultTitle = won ? 'Victory!' : 'Defeat'
+  const resultSub = won
+    ? `You sank the enemy fleet in ${playerShots} shots.`
+    : `The enemy sank your fleet. You sank ${enemySunk} of ${FLEET.length} ships — the ${enemyAfloat} that escaped are revealed on the board.`
+  const stats = (
+    <div className="stats">
+      <div className="stat">
+        <b>{playerShots}</b>
+        <span>Shots</span>
+      </div>
+      <div className="stat">
+        <b>{accuracy}%</b>
+        <span>Accuracy</span>
+      </div>
+      <div className="stat">
+        <b>{enemySunk}</b>
+        <span>Ships sunk</span>
+      </div>
+      <div className="stat">
+        <b>{FLEET.length - playerAfloat}</b>
+        <span>Ships lost</span>
+      </div>
+    </div>
+  )
 
   return (
     <div className="app">
@@ -173,36 +200,21 @@ export default function App() {
 
       {(state.phase === 'playing' || gameOver) && (
         <>
-          {gameOver && (
+          {gameOver && !scoreboardOpen && (
             <section className="result" role="status" aria-labelledby="gameover-title" data-testid="gameover">
-              <div className={`result__icon ${state.winner === 'player' ? 'result__icon--win' : 'result__icon--lose'}`}>
-                <Icon name={state.winner === 'player' ? 'trophy' : 'burst'} />
+              <div className={`result__icon ${won ? 'result__icon--win' : 'result__icon--lose'}`}>
+                <Icon name={won ? 'trophy' : 'burst'} />
               </div>
               <div className="result__body">
                 <h2 id="gameover-title" data-testid="gameover-title">
-                  {state.winner === 'player' ? 'Victory!' : 'Defeat'}
+                  {resultTitle}
                 </h2>
-                <p className="result__sub">
-                  {state.winner === 'player'
-                    ? `You sank the enemy fleet in ${playerShots} shots.`
-                    : `The enemy sank your fleet. You sank ${enemySunk} of ${FLEET.length} ships — the ${enemyAfloat} that escaped are revealed below.`}
-                </p>
-                <div className="stats">
-                  <div className="stat">
-                    <b>{playerShots}</b>
-                    <span>Shots</span>
-                  </div>
-                  <div className="stat">
-                    <b>{accuracy}%</b>
-                    <span>Accuracy</span>
-                  </div>
-                  <div className="stat">
-                    <b>{FLEET.length - playerAfloat}</b>
-                    <span>Ships lost</span>
-                  </div>
-                </div>
+                <p className="result__sub">{resultSub}</p>
               </div>
               <div className="result__actions">
+                <button type="button" className="btn" onClick={() => setScoreboardOpen(true)} data-testid="show-scoreboard">
+                  Scoreboard
+                </button>
                 <button type="button" className="btn btn--primary" onClick={() => dispatch({ type: 'RESET' })} data-testid="play-again">
                   ▶ Play again
                 </button>
@@ -233,9 +245,10 @@ export default function App() {
                 aim={aim}
                 lastShot={state.lastEvent?.by === 'player' ? state.lastEvent.coord : null}
                 dimmed={state.phase === 'playing' && state.turn === 'ai'}
+                labelHits
                 testId="enemy-board"
               />
-              <FleetTracker ships={state.enemy.ships} label="Enemy ships" />
+              <FleetTracker ships={state.enemy.ships} label="Enemy ships" showDamage />
               {coarsePointer && state.phase === 'playing' && (
                 <button
                   type="button"
@@ -262,20 +275,47 @@ export default function App() {
             </div>
           </div>
 
+          {gameOver && scoreboardOpen && (
+            <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="gameover-title" data-testid="gameover">
+              <div className="modal">
+                <div className={`modal__icon ${won ? 'modal__icon--win' : 'modal__icon--lose'}`}>
+                  <Icon name={won ? 'trophy' : 'burst'} />
+                </div>
+                <h2 id="gameover-title" data-testid="gameover-title">
+                  {resultTitle}
+                </h2>
+                <p className="modal__sub">{resultSub}</p>
+                {stats}
+                <div className="modal__actions">
+                  <button type="button" className="btn" onClick={() => setScoreboardOpen(false)} data-testid="view-boards">
+                    View boards
+                  </button>
+                  <button type="button" className="btn btn--primary" onClick={() => dispatch({ type: 'RESET' })} data-testid="play-again">
+                    ▶ Play again
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
   )
 }
 
-function describeShot(e: ShotEvent): string {
+function describeShot(e: ShotEvent, enemyShips: readonly Ship[]): string {
   const who = e.by === 'player' ? 'You' : 'Enemy'
   const at = coordLabel(e.coord)
   switch (e.result.kind) {
     case 'miss':
       return `${who} fired at ${at} — miss.`
-    case 'hit':
-      return e.by === 'player' ? `You hit something at ${at}!` : `Enemy hit your ${e.result.ship} at ${at}!`
+    case 'hit': {
+      const name = e.result.ship
+      if (e.by === 'ai') return `Enemy hit your ${name} at ${at}!`
+      const ship = enemyShips.find((s) => s.name === name)
+      const progress = ship ? ` (${ship.hits.length} of ${ship.length})` : ''
+      return `You hit the enemy ${name} at ${at}!${progress}`
+    }
     case 'sunk':
       return e.by === 'player' ? `You sank the enemy ${e.result.ship} at ${at}!` : `Enemy sank your ${e.result.ship} at ${at}!`
   }
@@ -296,7 +336,7 @@ function describe(state: GameState): { message: string; detail?: string; tone: '
   if (state.phase === 'over') {
     return {
       message: state.winner === 'player' ? 'Victory — you sank the enemy fleet!' : 'Defeat — your fleet was sunk.',
-      detail: state.lastEvent ? describeShot(state.lastEvent) : undefined,
+      detail: state.lastEvent ? describeShot(state.lastEvent, state.enemy.ships) : undefined,
       tone: state.winner === 'player' ? 'good' : 'bad',
     }
   }
@@ -306,7 +346,7 @@ function describe(state: GameState): { message: string; detail?: string; tone: '
     last.result.kind === 'miss' ? 'info' : last.by === 'player' ? 'good' : 'bad'
   return {
     message: state.turn === 'player' ? 'Your turn' : 'Enemy is firing…',
-    detail: describeShot(last),
+    detail: describeShot(last, state.enemy.ships),
     tone,
   }
 }

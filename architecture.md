@@ -133,7 +133,7 @@ Normal, which finishes in fewer than Easy (a correctness check, not tuning).
   stack below. Buttons have a 44 px minimum height.
 - Motion: CSS keyframes only; everything is disabled under `prefers-reduced-motion: reduce`.
 - Accessibility: every cell is a `<button role="gridcell" aria-label="B7, miss">`; status is
-  `role=status aria-live=polite`; the game-over result card is an inline `role=status` section above the boards (never an overlay, so the revealed enemy fleet stays visible).
+  `role=status aria-live=polite`; the game-over scoreboard is a `role=dialog aria-modal=true` pop-up that opens automatically; its "View boards" action dismisses it to a compact inline `role=status` result bar (with a "Scoreboard" button to reopen), so the revealed enemy fleet is always reachable. During battle, hit cells on the enemy board carry `data-ship`, a ship-coloured mark and an aria-label naming the ship (`C4, hit — Cruiser`); the enemy `FleetTracker` shows `hit 1/3` per damaged ship.
 
 ## Testing
 

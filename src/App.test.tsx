@@ -86,14 +86,62 @@ describe('App', () => {
       })
     }
 
-    expect(screen.getByTestId('gameover-title')).toHaveTextContent(/Victory!|Defeat/)
-    expect(screen.queryByRole('dialog')).toBeNull()
+    // Scoreboard pops up first, with stats and both actions.
+    const dialog = screen.getByRole('dialog')
+    expect(within(dialog).getByTestId('gameover-title')).toHaveTextContent(/Victory!|Defeat/)
+    expect(within(dialog).getByText('Shots')).toBeInTheDocument()
+    expect(within(dialog).getByText('Accuracy')).toBeInTheDocument()
+    expect(within(dialog).getByText('Ships sunk')).toBeInTheDocument()
+    expect(within(dialog).getByText('Ships lost')).toBeInTheDocument()
+    expect(within(dialog).getByTestId('play-again')).toBeVisible()
+    const title = within(dialog).getByTestId('gameover-title').textContent
+
+    // Behind it the enemy fleet is already fully revealed.
     const ships = within(enemy).getAllByTestId(/^ship-/)
     expect(ships).toHaveLength(5)
     expect(within(enemy).getByText(/Fleet revealed/)).toBeInTheDocument()
     const survivors = ships.filter((s) => s.dataset.sunk !== 'true')
     for (const s of survivors) expect(s.dataset.revealed).toBe('true')
-    if (screen.getByTestId('gameover-title').textContent === 'Defeat') expect(survivors.length).toBeGreaterThan(0)
+    if (title === 'Defeat') expect(survivors.length).toBeGreaterThan(0)
+
+    // "View boards" dismisses the pop-up; the compact result bar can reopen it.
+    await user.click(screen.getByTestId('view-boards'))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.getByTestId('gameover-title')).toHaveTextContent(title!)
     expect(screen.getByTestId('play-again')).toBeVisible()
+    await user.click(screen.getByTestId('show-scoreboard'))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+
+  it('tells the player which enemy ship they hit and tracks its damage', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: /Randomize/ }))
+    await user.click(screen.getByTestId('start'))
+
+    const enemy = screen.getByTestId('enemy-board')
+    let hitCell: HTMLElement | null = null
+    for (let i = 0; i < 100 && !hitCell; i++) {
+      const c = cell(enemy, i % 10, Math.floor(i / 10))
+      await user.click(c)
+      if (c.classList.contains('cell--hit')) {
+        hitCell = c
+        break
+      }
+      await act(async () => {
+        vi.advanceTimersByTime(1000)
+      })
+    }
+    if (!hitCell) throw new Error('never hit an enemy ship')
+
+    // Before the AI replies, the status names the ship that was hit and its damage.
+    const name = hitCell.dataset.ship
+    expect(name).toMatch(/^(Carrier|Battleship|Cruiser|Submarine|Destroyer)$/)
+    expect(screen.getByTestId('status')).toHaveTextContent(new RegExp(`You hit the enemy ${name} at [A-J]\\d+! \\(1 of \\d\\)`))
+    expect(hitCell).toHaveAccessibleName(new RegExp(`hit — ${name}`))
+    expect(hitCell.querySelector('.cell__mark')).toHaveClass(`cell__mark--${name}`)
+    const item = screen.getByTestId(`fleet-${name}`)
+    expect(item).toHaveClass('fleet__item--damaged')
+    expect(within(item).getByTestId(`damage-${name}`)).toHaveTextContent(/hit 1\/\d/)
   })
 })
