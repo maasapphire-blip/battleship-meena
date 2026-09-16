@@ -3,7 +3,7 @@
 True state of the project after each run. Updated at the end of every Devin run.
 Legend: `[x]` done and verified · `[~]` partially done · `[ ]` not started
 
-**Last updated:** 2026-09-16 (run 3)
+**Last updated:** 2026-09-16 (run 4)
 **Public play link (GitHub Pages):** https://maasapphire-blip.github.io/battleship-meena/ — **live** (verified 2026-09-16 after PR #1 merged; Pages source set to "GitHub Actions" in repo settings). Redeploys on every push to `main` via `.github/workflows/pages.yml`. Cloud Run (the production target) is not deployed yet: it needs a GCP project + WIF setup (architecture.md § Deployment).
 
 ## Milestone status
@@ -14,14 +14,24 @@ Legend: `[x]` done and verified · `[~]` partially done · `[ ]` not started
 | M1 | Core game logic: types, ship geometry, board placement/firing, tests | [x] | 15 unit tests in `src/game/board.test.ts`. |
 | M2 | Reducer + seeded RNG + Easy AI + full simulated games | [x] | 16 reducer tests incl. 100 simulated games; 6 RNG/AI tests. |
 | M3 | Boards + ship sprites (SVG vessels over the grid) | [x] | `Board`, `ShipSprite`, `FleetTracker` components. Own ships show flames on hit, charred when sunk; enemy ships revealed only when sunk. |
-| M4 | Playable loop: click-to-fire, AI reply with delay, status bar, game-over result card | [x] | AI replies after 650 ms. Mobile (coarse pointer) uses tap-to-aim then FIRE. |
+| M4 | Playable loop: click-to-fire, AI reply with delay, status bar, game-over scoreboard | [x] | AI replies after 650 ms. Mobile (coarse pointer) uses tap-to-aim then FIRE. Every player hit names the enemy ship and its damage ("You hit the enemy Cruiser at C4! (1 of 3)"), the hit cell gets a ship-coloured mark, and the enemy fleet tracker shows `hit 1/3` (bug M3, run 4). |
 | M5 | Manual placement: hover ghost (green/red), click to place, rotate (button / `R`), randomize, clear, pick up placed ship | [x] | Basic version done. No drag-and-drop, no keyboard-only placement yet. |
-| M6 | Game over screen with stats + persistence (win/loss record, settings in localStorage) | [~] | Inline result card (shots/accuracy/ships lost, Play again) shown above the boards; enemy fleet fully revealed with surviving ships in red (bug M1, run 3). **No localStorage persistence yet.** |
+| M6 | Game over screen with stats + persistence (win/loss record, settings in localStorage) | [~] | Scoreboard pop-up (shots/accuracy/ships sunk/ships lost, View boards, Play again) opens at game over (bug M2, run 4); "View boards" closes it to a compact result bar with a "Scoreboard" button to reopen. Enemy fleet fully revealed behind/after it with surviving ships in red (bug M1, run 3). **No localStorage persistence yet.** |
 | M7 | Animations (shot pop, miss ripple, hit flash, flame flicker, result slide-in, surviving-ship reveal) + reduced-motion | [~] | Basic CSS keyframes done and `prefers-reduced-motion` respected. Placement snap animation not done. |
 | M8 | Haptics + settings panel (haptics toggle, tap-to-aim toggle) | [ ] | Not started. |
 | M9 | Normal (hunt & target + parity) and Hard (probability density) AI | [x] | `ai/normal.ts`, `ai/hard.ts`, shared `ai/target.ts`; 19 tests in `strategies.test.ts` incl. 300 simulated games and the Hard < Normal < Easy ordering. Local 300-game sim: Easy ≈ 96, Normal ≈ 52, Hard ≈ 45 shots on average (sanity check only, not a tuning target). |
 | M10 | Polish + accessibility pass (keyboard nav on grid, screen reader announcements, colour contrast) | [~] | Cells are buttons with aria-labels, status is `aria-live`. No arrow-key navigation yet. |
 | M11 | Cloud Run deployment (Artifact Registry, Workload Identity Federation, GitHub Actions deploy) | [~] | `Dockerfile`, `nginx.conf` and `.github/workflows/deploy.yml` written. **Not deployed — needs a GCP project + WIF setup (see architecture.md § Deployment).** Interim public link served from GitHub Pages (`pages.yml`). |
+
+## Verification (run 4)
+
+```
+npm run lint       -> pass (oxlint, 3 pre-existing warnings, 0 errors)
+npm run typecheck  -> pass (tsc -b)
+npm test           -> 58 tests pass (5 files) — game-over test now asserts the scoreboard dialog, View boards, reopen; new test asserts ship name + "1 of N" on first hit
+npm run build      -> pass
+Browser check      -> full game to Defeat on localhost: first hit showed "You hit the enemy Carrier at A9! (1 of 5)" + tracker "hit 1/5"; scoreboard pop-up with 4 stats; View boards revealed 2 surviving ships; Scoreboard reopened it
+```
 
 ## Verification (run 3)
 

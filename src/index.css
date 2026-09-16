@@ -11,6 +11,11 @@
   --sunk: #8b1d16;
   --ok: #3ddc84;
   --accent: #ffb547;
+  --ship-Carrier: #ffd54a;
+  --ship-Battleship: #c48cff;
+  --ship-Cruiser: #5ee1ff;
+  --ship-Submarine: #6cf58e;
+  --ship-Destroyer: #ff9ad1;
   --gap: 2px;
   --cell: clamp(24px, calc((100vw - 64px) / 11), 40px);
   color-scheme: dark;
@@ -180,6 +185,39 @@ h1 {
   font-weight: 700;
   font-size: calc(var(--cell) * 0.5);
   line-height: 1;
+}
+/* Hit marks and tracker entries share a colour per ship so the player knows which ship they are hitting. */
+.cell__mark--Carrier,
+.fleet__item--Carrier {
+  --ship-color: var(--ship-Carrier);
+}
+.cell__mark--Battleship,
+.fleet__item--Battleship {
+  --ship-color: var(--ship-Battleship);
+}
+.cell__mark--Cruiser,
+.fleet__item--Cruiser {
+  --ship-color: var(--ship-Cruiser);
+}
+.cell__mark--Submarine,
+.fleet__item--Submarine {
+  --ship-color: var(--ship-Submarine);
+}
+.cell__mark--Destroyer,
+.fleet__item--Destroyer {
+  --ship-color: var(--ship-Destroyer);
+}
+.cell__mark[class*='cell__mark--'] {
+  color: #0b1a2b;
+  background: var(--ship-color);
+  border-radius: 50%;
+  width: 72%;
+  height: 72%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--cell) * 0.42);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.25);
 }
 .cell--sunk {
   background: var(--sunk);
@@ -381,6 +419,18 @@ h1 {
   color: var(--hit);
   font-size: 11px;
 }
+.fleet__item[class*='fleet__item--'][data-hits] {
+  border-left: 4px solid var(--ship-color, transparent);
+}
+.fleet__item--damaged {
+  background: #2a3a5c;
+  box-shadow: 0 0 0 1px var(--ship-color);
+}
+.fleet__tag--hit {
+  color: var(--ship-color);
+  font-size: 11px;
+  font-weight: 700;
+}
 .fleet__tag--ok {
   color: var(--ok);
 }
@@ -461,7 +511,64 @@ h1 {
   font: inherit;
 }
 
-/* Game over: inline result card so the revealed boards stay visible */
+/* Game over: scoreboard pop-up, then a compact result bar once the boards are shown */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 10, 20, 0.7);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 10;
+  animation: fadein 0.3s ease-out;
+}
+@keyframes fadein {
+  from {
+    opacity: 0;
+  }
+}
+.modal {
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 460px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  animation: slidein 0.4s ease-out;
+}
+.modal__icon {
+  font-size: 48px;
+  line-height: 1;
+}
+.modal__icon--win {
+  color: var(--accent);
+}
+.modal__icon--lose {
+  color: var(--hit);
+}
+.modal h2 {
+  margin: 0 0 6px;
+  font-size: 28px;
+  color: var(--accent);
+}
+.modal__sub {
+  color: var(--muted);
+  margin: 0;
+}
+.modal .stats {
+  grid-template-columns: repeat(4, 1fr);
+  margin: 16px 0;
+}
+.modal__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 .result {
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -505,8 +612,8 @@ h1 {
 }
 .result__actions {
   display: flex;
-  flex-direction: column;
   gap: 8px;
+  flex-wrap: wrap;
 }
 .stats {
   display: grid;
@@ -532,6 +639,9 @@ h1 {
 @media (max-width: 760px) {
   .boards {
     grid-template-columns: 1fr;
+  }
+  .modal .stats {
+    grid-template-columns: repeat(2, 1fr);
   }
   .dock {
     grid-template-columns: 1fr;

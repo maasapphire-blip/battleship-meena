@@ -24,6 +24,8 @@ interface Props {
   hideShips?: boolean
   /** Game over: style surviving ships as newly revealed enemy vessels. */
   revealed?: boolean
+  /** Colour-code hit marks on hidden ships by ship and name the ship in the cell label. */
+  labelHits?: boolean
   /** Enable clicks on untried cells. */
   interactive?: boolean
   onCellClick?: (c: Coord) => void
@@ -42,6 +44,7 @@ export function Board({
   subtitle,
   hideShips = false,
   revealed = false,
+  labelHits = false,
   interactive = false,
   onCellClick,
   onCellHover,
@@ -58,6 +61,7 @@ export function Board({
   const visibleShips = hideShips ? board.ships.filter(isSunk) : board.ships
   const cellIsCoveredBySunk = (c: Coord) =>
     visibleShips.some((s) => isSunk(s) && coversCell(s, c))
+  const shipAt = (c: Coord) => board.ships.find((s) => coversCell(s, c))
 
   return (
     <section className={`board${dimmed ? ' board--dimmed' : ''}`} data-testid={testId} aria-label={title}>
@@ -78,6 +82,7 @@ export function Board({
               const c = { x, y }
               const state = board.cells[y][x]
               const sunkHere = cellIsCoveredBySunk(c)
+              const hitShip = labelHits && state === 'hit' && !sunkHere ? shipAt(c) : undefined
               const isAim = aim && aim.x === x && aim.y === y
               const isLast = lastShot && lastShot.x === x && lastShot.y === y
               const clickable = interactive && state === 'water'
@@ -91,7 +96,7 @@ export function Board({
               ]
                 .filter(Boolean)
                 .join(' ')
-              const label = `${coordLabel(c)}, ${sunkHere ? 'sunk' : state === 'water' ? 'not fired' : state}`
+              const label = `${coordLabel(c)}, ${sunkHere ? 'sunk' : state === 'water' ? 'not fired' : state}${hitShip ? ` — ${hitShip.name}` : ''}`
               return (
                 <button
                   key={x}
@@ -102,12 +107,18 @@ export function Board({
                   aria-label={label}
                   data-x={x}
                   data-y={y}
+                  data-ship={hitShip?.name}
+                  title={hitShip ? `Hit — ${hitShip.name} (${hitShip.hits.length} of ${hitShip.length})` : undefined}
                   disabled={!clickable}
                   onClick={() => clickable && onCellClick?.(c)}
                   onMouseEnter={() => onCellHover?.(c)}
                   onFocus={() => onCellHover?.(c)}
                 >
-                  {state === 'hit' && !sunkHere && hideShips && <span className="cell__mark">✕</span>}
+                  {state === 'hit' && !sunkHere && hideShips && (
+                    <span className={hitShip ? `cell__mark cell__mark--${hitShip.name}` : 'cell__mark'}>
+                      ✕
+                    </span>
+                  )}
                 </button>
               )
             })}
