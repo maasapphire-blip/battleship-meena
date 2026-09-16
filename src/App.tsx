@@ -27,7 +27,6 @@ export default function App() {
   const [state, dispatch] = useReducer(gameReducer, undefined, initialGame)
   const [hover, setHover] = useState<Coord | null>(null)
   const [aim, setAim] = useState<Coord | null>(null)
-  const [showBoards, setShowBoards] = useState(false)
   const coarsePointer = useMediaQuery('(pointer: coarse)')
 
   // AI replies after a short delay so the player can see their own shot land.
@@ -48,10 +47,7 @@ export default function App() {
   }, [state.phase])
 
   useEffect(() => {
-    if (state.phase !== 'playing') {
-      setAim(null)
-      setShowBoards(false)
-    }
+    if (state.phase !== 'playing') setAim(null)
   }, [state.phase])
 
   const ghost: Ghost | null = useMemo(() => {
@@ -86,6 +82,8 @@ export default function App() {
   const accuracy = playerShots ? Math.round((playerHits / playerShots) * 100) : 0
   const playerAfloat = state.player.ships.filter((s) => !isSunk(s)).length
   const enemySunk = state.enemy.ships.filter(isSunk).length
+  const enemyAfloat = FLEET.length - enemySunk
+  const gameOver = state.phase === 'over'
 
   return (
     <div className="app">
@@ -173,15 +171,63 @@ export default function App() {
         </>
       )}
 
-      {(state.phase === 'playing' || state.phase === 'over') && (
+      {(state.phase === 'playing' || gameOver) && (
         <>
+          {gameOver && (
+            <section className="result" role="status" aria-labelledby="gameover-title" data-testid="gameover">
+              <div className={`result__icon ${state.winner === 'player' ? 'result__icon--win' : 'result__icon--lose'}`}>
+                <Icon name={state.winner === 'player' ? 'trophy' : 'burst'} />
+              </div>
+              <div className="result__body">
+                <h2 id="gameover-title" data-testid="gameover-title">
+                  {state.winner === 'player' ? 'Victory!' : 'Defeat'}
+                </h2>
+                <p className="result__sub">
+                  {state.winner === 'player'
+                    ? `You sank the enemy fleet in ${playerShots} shots.`
+                    : `The enemy sank your fleet. You sank ${enemySunk} of ${FLEET.length} ships — the ${enemyAfloat} that escaped are revealed below.`}
+                </p>
+                <div className="stats">
+                  <div className="stat">
+                    <b>{playerShots}</b>
+                    <span>Shots</span>
+                  </div>
+                  <div className="stat">
+                    <b>{accuracy}%</b>
+                    <span>Accuracy</span>
+                  </div>
+                  <div className="stat">
+                    <b>{FLEET.length - playerAfloat}</b>
+                    <span>Ships lost</span>
+                  </div>
+                </div>
+              </div>
+              <div className="result__actions">
+                <button type="button" className="btn btn--primary" onClick={() => dispatch({ type: 'RESET' })} data-testid="play-again">
+                  ▶ Play again
+                </button>
+              </div>
+            </section>
+          )}
+
           <div className="boards">
             <div className="board-col">
               <Board
                 title="Enemy waters"
-                subtitle={state.phase === 'over' ? 'Revealed' : state.turn === 'player' ? (coarsePointer ? 'Tap to aim' : 'Click to fire') : 'Enemy firing…'}
+                subtitle={
+                  gameOver
+                    ? enemyAfloat === 0
+                      ? 'Fleet revealed — all sunk'
+                      : `Fleet revealed — ${enemyAfloat} escaped`
+                    : state.turn === 'player'
+                      ? coarsePointer
+                        ? 'Tap to aim'
+                        : 'Click to fire'
+                      : 'Enemy firing…'
+                }
                 board={state.enemy}
-                hideShips={state.phase !== 'over'}
+                hideShips={!gameOver}
+                revealed={gameOver}
                 interactive={state.phase === 'playing' && state.turn === 'player'}
                 onCellClick={onEnemyCell}
                 aim={aim}
@@ -216,52 +262,6 @@ export default function App() {
             </div>
           </div>
 
-          {state.phase === 'over' && !showBoards && (
-            <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="gameover-title">
-              <div className="modal">
-                <div className={`modal__icon ${state.winner === 'player' ? 'modal__icon--win' : 'modal__icon--lose'}`}>
-                  <Icon name={state.winner === 'player' ? 'trophy' : 'burst'} />
-                </div>
-                <h2 id="gameover-title" data-testid="gameover-title">
-                  {state.winner === 'player' ? 'Victory!' : 'Defeat'}
-                </h2>
-                <p className="modal__sub">
-                  {state.winner === 'player'
-                    ? `You sank the enemy fleet in ${playerShots} shots.`
-                    : `The enemy sank your fleet. You sank ${enemySunk} of ${FLEET.length} ships.`}
-                </p>
-                <div className="stats">
-                  <div className="stat">
-                    <b>{playerShots}</b>
-                    <span>Shots</span>
-                  </div>
-                  <div className="stat">
-                    <b>{accuracy}%</b>
-                    <span>Accuracy</span>
-                  </div>
-                  <div className="stat">
-                    <b>{FLEET.length - playerAfloat}</b>
-                    <span>Ships lost</span>
-                  </div>
-                </div>
-                <div className="actions actions--center">
-                  <button type="button" className="btn btn--primary" onClick={() => dispatch({ type: 'RESET' })} data-testid="play-again">
-                    ▶ Play again
-                  </button>
-                  <button type="button" className="btn" onClick={() => setShowBoards(true)}>
-                    View boards
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          {state.phase === 'over' && showBoards && (
-            <div className="actions actions--center">
-              <button type="button" className="btn btn--primary" onClick={() => dispatch({ type: 'RESET' })}>
-                ▶ Play again
-              </button>
-            </div>
-          )}
         </>
       )}
     </div>

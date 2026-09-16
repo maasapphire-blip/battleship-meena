@@ -283,6 +283,26 @@ h1 {
   fill: #4a3535;
   stroke: #1a1010;
 }
+.ship-revealed .hull {
+  fill: #a8535c;
+  stroke: #4a1a20;
+}
+.ship-revealed .deck {
+  fill: #7d3a42;
+}
+.ship-revealed .detail {
+  fill: #e8b4b8;
+  stroke: #4a1a20;
+}
+.ship-wrap--revealed {
+  animation: surface 0.7s ease-out;
+}
+@keyframes surface {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
 .ship-ghost-ok .hull {
   fill: var(--ok);
   fill-opacity: 0.8;
@@ -441,60 +461,58 @@ h1 {
   font: inherit;
 }
 
-/* Game over */
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  display: flex;
+/* Game over: inline result card so the revealed boards stay visible */
+.result {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 20px;
   align-items: center;
-  justify-content: center;
-  padding: 16px;
-  z-index: 10;
-  animation: fadein 0.3s ease-out;
-}
-@keyframes fadein {
-  from {
-    opacity: 0;
-  }
-}
-.modal {
   background: var(--panel);
   border-radius: 16px;
-  padding: 24px;
-  max-width: 420px;
-  width: 100%;
-  text-align: center;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  animation: slidein 0.4s ease-out;
 }
-.modal__icon {
+@keyframes slidein {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+.result__icon {
   font-size: 48px;
   line-height: 1;
 }
-.modal__icon--win {
+.result__icon--win {
   color: var(--accent);
 }
-.modal__icon--lose {
+.result__icon--lose {
   color: var(--hit);
 }
 .icon {
   display: inline-block;
   vertical-align: -0.125em;
 }
-.modal h2 {
-  margin: 0 0 6px;
+.result h2 {
+  margin: 0 0 4px;
   font-size: 28px;
   color: var(--accent);
 }
-.modal__sub {
+.result__sub {
   color: var(--muted);
   margin: 0;
 }
+.result__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 .stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 120px));
   gap: 8px;
-  margin: 16px 0;
+  margin: 12px 0 0;
 }
 .stat {
   background: var(--panel-2);
@@ -523,6 +541,13 @@ h1 {
   }
   .btn--primary {
     width: 100%;
+  }
+  .result {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .stats {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 

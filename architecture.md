@@ -133,7 +133,7 @@ Normal, which finishes in fewer than Easy (a correctness check, not tuning).
   stack below. Buttons have a 44 px minimum height.
 - Motion: CSS keyframes only; everything is disabled under `prefers-reduced-motion: reduce`.
 - Accessibility: every cell is a `<button role="gridcell" aria-label="B7, miss">`; status is
-  `role=status aria-live=polite`; the game-over dialog is `role=dialog aria-modal`.
+  `role=status aria-live=polite`; the game-over result card is an inline `role=status` section above the boards (never an overlay, so the revealed enemy fleet stays visible).
 
 ## Testing
 
