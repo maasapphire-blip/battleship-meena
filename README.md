@@ -1,9 +1,18 @@
 # Battleship
 
-Browser Battleship — you vs. an AI. React 19 + TypeScript + Vite; deployed as a static nginx
-container on Google Cloud Run.
+Browser Battleship — you vs. an AI (Easy / Normal / Hard). React 19 + TypeScript + Vite; static
+bundle, packaged as an nginx container for Google Cloud Run.
 
-**Play:** not deployed yet — see [progress.md](progress.md) for the current state and the local dev link.
+**Play:** https://maasapphire-blip.github.io/battleship-meena/ (GitHub Pages, published from `main`).
+Cloud Run deployment is wired up but waits on a GCP project — see [progress.md](progress.md).
+
+## For reviewers
+
+- Start with [architecture.md](architecture.md), then `src/game/` (pure rules + AI, no React) and
+  `src/App.tsx` + `src/components/` (UI).
+- The AI only ever sees `EnemyView` (`unknown | miss | hit` grid + sunk list) — `src/game/ai/common.ts`.
+  Difficulty = which strategy is selected: `easy.ts`, `normal.ts`, `hard.ts`.
+- `npm test` runs 56 unit/component tests including hundreds of simulated full games.
 
 ## Docs
 

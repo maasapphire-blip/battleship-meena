@@ -103,11 +103,19 @@ interface Ai<M> {
 enforces the "no cheating" rule. Difficulty is purely which `Ai` implementation is selected — no
 telemetry, no adaptive tuning.
 
-- Easy: uniform random untried cell, `memory = null`. (implemented)
-- Normal: checkerboard-parity hunt, neighbour queue after a hit, axis lock after two aligned hits,
-  queue rebuild on sunk. (planned, M9)
-- Hard: per remaining ship, enumerate legal placements consistent with the view, build a heat map,
-  weight placements covering open hits, fire at the argmax. (planned, M9)
+- Easy (`ai/easy.ts`): uniform random untried cell, `memory = null`.
+- Normal (`ai/normal.ts`): hunt on checkerboard parity `(x + y) % 2 === 0`; after a hit, fire at its
+  untried neighbours; once two or more hits are aligned, only extend the run along that axis; on sunk,
+  attribute the ship's cells to the aligned run and keep any leftover hits open (adjacent ships).
+- Hard (`ai/hard.ts`): per remaining ship, enumerate every legal placement consistent with the view
+  (no misses, no cells already attributed to a sunk ship), add its weight to each unknown cell it
+  covers; while there are open hits only placements covering one count, weighted `2^hits`. Fires at the
+  hottest cell, ties broken by the seeded RNG. Places its own fleet so no two ships touch.
+- Shared `ai/target.ts`: `TargetMemory { openHits, sunkCells }`, `trackResult`, `targetCandidates`.
+
+`strategies.test.ts` asserts each behaviour on hand-built boards, that no strategy ever repeats a cell
+over hundreds of simulated games, and that over a fixed seed set Hard finishes in fewer shots than
+Normal, which finishes in fewer than Easy (a correctness check, not tuning).
 
 ## UI
 
@@ -137,7 +145,16 @@ telemetry, no adaptive tuning.
 
 CI (`.github/workflows/ci.yml`): `npm ci` → lint → typecheck → test (coverage) → build → `docker build`.
 
-## Build & deployment (Cloud Run)
+## Build & deployment
+
+### GitHub Pages (public play link, interim)
+
+`.github/workflows/pages.yml` (on push to `main`): `npm run build` with `BASE_PATH=/battleship-meena/`
+(`vite.config.ts` reads `base` from `BASE_PATH`, default `/`) and publishes `dist/` with
+`actions/deploy-pages`. Requires Pages source = "GitHub Actions" in the repo settings (the workflow
+tries to enable it itself). Free, no auth, no server — the game is fully client-side.
+
+### Cloud Run (production target)
 
 - `Dockerfile`: multi-stage — `node:20-alpine` runs `npm ci && npm run build`; `nginx:1.27-alpine`
   serves `dist/` on port 8080 with `nginx.conf` (SPA fallback to `index.html`, immutable cache for

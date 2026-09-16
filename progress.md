@@ -3,8 +3,8 @@
 True state of the project after each run. Updated at the end of every Devin run.
 Legend: `[x]` done and verified · `[~]` partially done · `[ ]` not started
 
-**Last updated:** 2026-09-15 (run 1)
-**Play link (dev preview, this session only):** https://5173--70635c9fe8a9474a840f081513216c63.preview.devinapps.com — requires being signed in to Devin. No Cloud Run deployment yet.
+**Last updated:** 2026-09-16 (run 2)
+**Public play link (GitHub Pages):** https://maasapphire-blip.github.io/battleship-meena/ — deployed by `.github/workflows/pages.yml` on every push to `main`. Cloud Run (the production target) is not deployed yet: it needs a GCP project + WIF setup (architecture.md § Deployment).
 
 ## Milestone status
 
@@ -19,11 +19,20 @@ Legend: `[x]` done and verified · `[~]` partially done · `[ ]` not started
 | M6 | Game over screen with stats + persistence (win/loss record, settings in localStorage) | [~] | Modal with shots/accuracy/ships lost and Play again done. **No localStorage persistence yet.** |
 | M7 | Animations (shot pop, miss ripple, hit flash, flame flicker, overlay fade) + reduced-motion | [~] | Basic CSS keyframes done and `prefers-reduced-motion` respected. Sunk-ship reveal and placement snap animations not done. |
 | M8 | Haptics + settings panel (haptics toggle, tap-to-aim toggle) | [ ] | Not started. |
-| M9 | Normal (hunt & target + parity) and Hard (probability density) AI | [ ] | **Not started. Selecting Normal or Hard in the UI currently plays the Easy (random) AI.** |
+| M9 | Normal (hunt & target + parity) and Hard (probability density) AI | [x] | `ai/normal.ts`, `ai/hard.ts`, shared `ai/target.ts`; 19 tests in `strategies.test.ts` incl. 300 simulated games and the Hard < Normal < Easy ordering. Local 300-game sim: Easy ≈ 96, Normal ≈ 52, Hard ≈ 45 shots on average (sanity check only, not a tuning target). |
 | M10 | Polish + accessibility pass (keyboard nav on grid, screen reader announcements, colour contrast) | [~] | Cells are buttons with aria-labels, status is `aria-live`. No arrow-key navigation yet. |
-| M11 | Cloud Run deployment (Artifact Registry, Workload Identity Federation, GitHub Actions deploy) | [~] | `Dockerfile`, `nginx.conf` and `.github/workflows/deploy.yml` written. **Not deployed — needs a GCP project + WIF setup (see architecture.md § Deployment).** |
+| M11 | Cloud Run deployment (Artifact Registry, Workload Identity Federation, GitHub Actions deploy) | [~] | `Dockerfile`, `nginx.conf` and `.github/workflows/deploy.yml` written. **Not deployed — needs a GCP project + WIF setup (see architecture.md § Deployment).** Interim public link served from GitHub Pages (`pages.yml`). |
 
-## Verification (this run)
+## Verification (run 2)
+
+```
+npm run lint       -> pass (oxlint, 3 pre-existing warnings, 0 errors)
+npm run typecheck  -> pass (tsc -b)
+npm test           -> 56 tests pass (5 files)
+npm run build      -> pass (dist/ ~242 kB JS, 6.9 kB CSS); also with BASE_PATH=/battleship-meena/
+```
+
+## Verification (run 1)
 
 ```
 npm run lint       -> pass (oxlint, 0 warnings)
@@ -45,10 +54,10 @@ npm run dev        # http://localhost:5173
 
 ## Known gaps / next run
 
-1. M9 — implement Normal and Hard AI (biggest functional gap; difficulty selector is misleading until then).
-2. M6 — localStorage for difficulty + win/loss record.
-3. M8 — haptics helper + settings panel.
-4. M11 — create GCP project, Artifact Registry repo, WIF provider; set GitHub repo variables; first deploy.
-5. Playwright E2E suite (not started).
+1. M11 — create GCP project, Artifact Registry repo, WIF provider; set GitHub repo variables; first Cloud Run deploy (public link then moves off GitHub Pages).
+2. M8 — haptics helper + settings panel.
+3. M6 — localStorage for difficulty + win/loss record.
+4. M7/M10 — remaining animations (sunk reveal, placement snap), arrow-key grid navigation.
+5. Playwright E2E suite (not started). Normal/Hard have unit + simulation coverage but have not been play-tested in the browser yet.
 
 See `bugs.md` for defects.

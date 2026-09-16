@@ -1,18 +1,17 @@
 import type { Difficulty } from '../types'
 import type { Ai } from './common'
 import { easyAi } from './easy'
+import { hardAi } from './hard'
+import { normalAi } from './normal'
+import type { TargetMemory } from './target'
 
-export type AiMemory = unknown
+export type AiMemory = null | TargetMemory
 
-/**
- * Registry of AI strategies by difficulty. Normal (hunt & target with parity)
- * and Hard (probability density) are implemented in milestone 9; until then
- * they fall back to Easy so the game is playable at every setting.
- */
+/** Registry of AI strategies by difficulty. Difficulty is purely which strategy is selected. */
 export const AIS: Record<Difficulty, Ai<AiMemory>> = {
   easy: easyAi,
-  normal: easyAi,
-  hard: easyAi,
+  normal: normalAi,
+  hard: hardAi,
 }
 
 export type { Ai, EnemyView } from './common'
