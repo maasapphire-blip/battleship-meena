@@ -4,7 +4,7 @@ True state of the project after each run. Updated at the end of every Devin run.
 Legend: `[x]` done and verified · `[~]` partially done · `[ ]` not started
 
 **Last updated:** 2026-09-16 (run 2)
-**Public play link (GitHub Pages):** https://maasapphire-blip.github.io/battleship-meena/ — deployed by `.github/workflows/pages.yml` on every push to `main`. Cloud Run (the production target) is not deployed yet: it needs a GCP project + WIF setup (architecture.md § Deployment).
+**Public play link (GitHub Pages):** https://maasapphire-blip.github.io/battleship-meena/ — **live** (verified 2026-09-16 after PR #1 merged; Pages source set to "GitHub Actions" in repo settings). Redeploys on every push to `main` via `.github/workflows/pages.yml`. Cloud Run (the production target) is not deployed yet: it needs a GCP project + WIF setup (architecture.md § Deployment).
 
 ## Milestone status
 
