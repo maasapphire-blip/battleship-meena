@@ -22,6 +22,8 @@ interface Props {
   subtitle?: string
   /** Hide un-sunk ships (enemy waters). */
   hideShips?: boolean
+  /** Game over: style surviving ships as newly revealed enemy vessels. */
+  revealed?: boolean
   /** Enable clicks on untried cells. */
   interactive?: boolean
   onCellClick?: (c: Coord) => void
@@ -39,6 +41,7 @@ export function Board({
   title,
   subtitle,
   hideShips = false,
+  revealed = false,
   interactive = false,
   onCellClick,
   onCellHover,
@@ -114,10 +117,17 @@ export function Board({
         {visibleShips.map((ship) => (
           <div
             key={ship.name}
-            className={`ship-wrap${onShipClick ? ' ship-wrap--clickable' : ''}`}
+            className={[
+              'ship-wrap',
+              onShipClick ? 'ship-wrap--clickable' : '',
+              revealed && !isSunk(ship) ? 'ship-wrap--revealed' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
             style={shipGridArea(ship)}
             data-testid={`ship-${ship.name}`}
             data-sunk={isSunk(ship) ? 'true' : undefined}
+            data-revealed={revealed && !isSunk(ship) ? 'true' : undefined}
             onClick={onShipClick ? () => onShipClick(ship) : undefined}
             title={onShipClick ? `Pick up ${ship.name}` : ship.name}
           >
@@ -125,7 +135,7 @@ export function Board({
               length={ship.length}
               orientation={ship.orientation}
               hits={ship.hits}
-              variant={isSunk(ship) ? 'sunk' : 'own'}
+              variant={isSunk(ship) ? 'sunk' : revealed ? 'revealed' : 'own'}
             />
           </div>
         ))}

@@ -71,4 +71,29 @@ describe('App', () => {
     const fired = player.querySelectorAll('.cell--miss, .cell--hit')
     expect(fired.length).toBe(1)
   })
+
+  it('reveals the whole enemy fleet on the board when the game ends', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: /Randomize/ }))
+    await user.click(screen.getByTestId('start'))
+
+    const enemy = screen.getByTestId('enemy-board')
+    for (let i = 0; i < 100 && !screen.queryByTestId('gameover-title'); i++) {
+      await user.click(cell(enemy, i % 10, Math.floor(i / 10)))
+      await act(async () => {
+        vi.advanceTimersByTime(1000)
+      })
+    }
+
+    expect(screen.getByTestId('gameover-title')).toHaveTextContent(/Victory!|Defeat/)
+    expect(screen.queryByRole('dialog')).toBeNull()
+    const ships = within(enemy).getAllByTestId(/^ship-/)
+    expect(ships).toHaveLength(5)
+    expect(within(enemy).getByText(/Fleet revealed/)).toBeInTheDocument()
+    const survivors = ships.filter((s) => s.dataset.sunk !== 'true')
+    for (const s of survivors) expect(s.dataset.revealed).toBe('true')
+    if (screen.getByTestId('gameover-title').textContent === 'Defeat') expect(survivors.length).toBeGreaterThan(0)
+    expect(screen.getByTestId('play-again')).toBeVisible()
+  })
 })

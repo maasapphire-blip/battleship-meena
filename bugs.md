@@ -14,4 +14,4 @@ Status: `open` · `fixed (<commit/PR>)` · `wontfix`
 
 | # | Found | Area | Description | Status |
 |---|-------|------|-------------|--------|
-| | | | _none reported yet_ | |
+| M1 | 2026-09-16 | UI | After the game ended, the opponent's ship positions were not shown. Cause: the game-over modal was a full-screen dark overlay that covered the boards; the reveal only appeared after clicking a small "View boards" button, and surviving enemy ships were drawn in the same grey as your own fleet. Fix: replaced the overlay with an inline result card above the boards so the enemy board is always visible, surviving enemy ships are drawn in red with a surfacing animation, the enemy board header reads "Fleet revealed — N escaped", and `App.test.tsx` plays a full game and asserts all 5 enemy ships are rendered at game over. | fixed (run 3) |

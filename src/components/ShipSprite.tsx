@@ -1,6 +1,6 @@
 import type { Orientation } from '../game/types'
 
-export type SpriteVariant = 'own' | 'sunk' | 'ghost-ok' | 'ghost-bad' | 'mini'
+export type SpriteVariant = 'own' | 'sunk' | 'revealed' | 'ghost-ok' | 'ghost-bad' | 'mini'
 
 interface Props {
   length: number
