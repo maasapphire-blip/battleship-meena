@@ -1,6 +1,6 @@
-# Deploys to Google Cloud Run. Requires repository secrets/variables:
-#   GCP_PROJECT_ID, GCP_REGION, GCP_WORKLOAD_IDENTITY_PROVIDER, GCP_SERVICE_ACCOUNT
-# See architecture.md "Deployment" for the one-time GCP setup.
+# Deploys to Google Cloud Run on every push to main (keyless, via Workload Identity Federation).
+# None of the values below are secrets: the WIF provider only accepts tokens from this repository
+# (attribute condition on assertion.repository). One-time GCP setup is in architecture.md "Deployment".
 name: Deploy to Cloud Run
 on:
   push:
@@ -11,25 +11,45 @@ permissions:
   contents: read
   id-token: write
 
+concurrency:
+  group: cloud-run-deploy
+  cancel-in-progress: false
+
+env:
+  GCP_PROJECT_ID: project-c9d27649-7397-4366-8f0
+  GCP_REGION: us-central1
+  GCP_WORKLOAD_IDENTITY_PROVIDER: projects/804257770142/locations/global/workloadIdentityPools/github/providers/github
+  GCP_SERVICE_ACCOUNT: devin-deployer@project-c9d27649-7397-4366-8f0.iam.gserviceaccount.com
+  SERVICE: battleship
+
 jobs:
   deploy:
-    if: ${{ vars.GCP_PROJECT_ID != '' }}
     runs-on: ubuntu-latest
-    env:
-      SERVICE: battleship
-      IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/battleship/battleship:${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
-      - uses: google-github-actions/auth@v2
+      - id: auth
+        uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v2
-      - run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev --quiet
-      - run: docker build -t "$IMAGE" . && docker push "$IMAGE"
-      - uses: google-github-actions/deploy-cloudrun@v2
+      - run: gcloud auth configure-docker "$GCP_REGION-docker.pkg.dev" --quiet
+      - name: Build and push image
+        run: |
+          IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/battleship/battleship:$GITHUB_SHA"
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+      - id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2
         with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
           service: ${{ env.SERVICE }}
-          region: ${{ vars.GCP_REGION }}
+          region: ${{ env.GCP_REGION }}
           image: ${{ env.IMAGE }}
           flags: --allow-unauthenticated --port=8080 --memory=256Mi --max-instances=3
+      - name: Smoke test
+        run: |
+          echo "Deployed: ${{ steps.deploy.outputs.url }}"
+          curl -fsS "${{ steps.deploy.outputs.url }}" | grep -q '<div id="root">'

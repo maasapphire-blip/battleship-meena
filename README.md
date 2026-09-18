@@ -4,7 +4,7 @@ Browser Battleship — you vs. an AI (Easy / Normal / Hard). React 19 + TypeScri
 bundle, packaged as an nginx container for Google Cloud Run.
 
 **Play:** https://maasapphire-blip.github.io/battleship-meena/ (GitHub Pages, published from `main`).
-Cloud Run deployment is wired up but waits on a GCP project — see [progress.md](progress.md).
+Cloud Run deployment (project `project-c9d27649-7397-4366-8f0`, `us-central1`) runs from GitHub Actions on every push to `main` — see [progress.md](progress.md) for the current URL and state.
 
 ## For reviewers
 

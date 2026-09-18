@@ -3,8 +3,8 @@
 True state of the project after each run. Updated at the end of every Devin run.
 Legend: `[x]` done and verified · `[~]` partially done · `[ ]` not started
 
-**Last updated:** 2026-09-16 (run 4)
-**Public play link (GitHub Pages):** https://maasapphire-blip.github.io/battleship-meena/ — **live** (verified 2026-09-16 after PR #1 merged; Pages source set to "GitHub Actions" in repo settings). Redeploys on every push to `main` via `.github/workflows/pages.yml`. Cloud Run (the production target) is not deployed yet: it needs a GCP project + WIF setup (architecture.md § Deployment).
+**Last updated:** 2026-09-18 (run 5)
+**Public play link (GitHub Pages):** https://maasapphire-blip.github.io/battleship-meena/ — **live** (verified 2026-09-16 after PR #1 merged; Pages source set to "GitHub Actions" in repo settings). Redeploys on every push to `main` via `.github/workflows/pages.yml`. **Cloud Run (production):** GCP project `project-c9d27649-7397-4366-8f0`, region `us-central1`, service `battleship`. WIF + Artifact Registry set up 2026-09-18 (run 5); `.github/workflows/deploy.yml` deploys on every push to `main`. **First deploy runs when the run-5 PR is merged — URL to be recorded here once it has succeeded.**
 
 ## Milestone status
 
@@ -21,7 +21,15 @@ Legend: `[x]` done and verified · `[~]` partially done · `[ ]` not started
 | M8 | Haptics + settings panel (haptics toggle, tap-to-aim toggle) | [ ] | Not started. |
 | M9 | Normal (hunt & target + parity) and Hard (probability density) AI | [x] | `ai/normal.ts`, `ai/hard.ts`, shared `ai/target.ts`; 19 tests in `strategies.test.ts` incl. 300 simulated games and the Hard < Normal < Easy ordering. Local 300-game sim: Easy ≈ 96, Normal ≈ 52, Hard ≈ 45 shots on average (sanity check only, not a tuning target). |
 | M10 | Polish + accessibility pass (keyboard nav on grid, screen reader announcements, colour contrast) | [~] | Cells are buttons with aria-labels, status is `aria-live`. No arrow-key navigation yet. |
-| M11 | Cloud Run deployment (Artifact Registry, Workload Identity Federation, GitHub Actions deploy) | [~] | `Dockerfile`, `nginx.conf` and `.github/workflows/deploy.yml` written. **Not deployed — needs a GCP project + WIF setup (see architecture.md § Deployment).** Interim public link served from GitHub Pages (`pages.yml`). |
+| M11 | Cloud Run deployment (Artifact Registry, Workload Identity Federation, GitHub Actions deploy) | [~] | GCP one-time setup done (APIs, `devin-deployer` SA, AR repo `battleship`, WIF pool/provider locked to this repo); `deploy.yml` carries the project/region/provider/SA as plain env values (org policy forbids SA keys). Docker image builds locally. **Not yet deployed — first run happens on merge of the run-5 PR; verify and record the `*.run.app` URL.** GitHub Pages link stays as a mirror. |
+
+## Verification (run 5)
+
+```
+docker build .        -> pass (nginx image serves index.html on :8080 locally)
+npm run lint/typecheck/test/build -> unchanged from run 4 (no app code changed)
+Cloud Run deploy      -> pending: runs in GitHub Actions on merge to main
+```
 
 ## Verification (run 4)
 
@@ -74,7 +82,7 @@ npm run dev        # http://localhost:5173
 
 ## Known gaps / next run
 
-1. M11 — create GCP project, Artifact Registry repo, WIF provider; set GitHub repo variables; first Cloud Run deploy (public link then moves off GitHub Pages).
+1. M11 — confirm the first Cloud Run deploy succeeded, record the `*.run.app` URL here and in README; optionally trim the deployer SA's setup-only roles (architecture.md).
 2. M8 — haptics helper + settings panel.
 3. M6 — localStorage for difficulty + win/loss record.
 4. M7/M10 — remaining animations (sunk reveal, placement snap), arrow-key grid navigation.
