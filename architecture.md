@@ -163,35 +163,39 @@ tries to enable it itself). Free, no auth, no server — the game is fully clien
   Workload Identity Federation (no long-lived keys), builds and pushes
   `${REGION}-docker.pkg.dev/${PROJECT}/battleship/battleship:${sha}` to Artifact Registry, then
   `deploy-cloudrun` to service `battleship` (`--allow-unauthenticated --port 8080 --memory 256Mi
-  --max-instances 3`). The job is skipped until the `GCP_PROJECT_ID` repository variable is set.
+  --max-instances 3`), then curls the service URL as a smoke test.
+- Configuration lives as plain `env:` values in the workflow (project `project-c9d27649-7397-4366-8f0`,
+  region `us-central1`, WIF provider, deployer SA). None of these are secrets: the WIF provider has an
+  attribute condition `assertion.repository=='maasapphire-blip/battleship-meena'`, so only workflows
+  in this repository can mint tokens for the deployer. The org policy
+  `iam.disableServiceAccountKeyCreation` is on, so there are (and can be) no JSON keys anywhere.
 
-One-time GCP setup (not yet done):
+One-time GCP setup (done 2026-09-18 in Cloud Shell):
 
 ```bash
-PROJECT=<project-id> REGION=europe-west1 REPO=<github-owner>/battleship-meena
-gcloud services enable run.googleapis.com artifactregistry.googleapis.com iamcredentials.googleapis.com
-gcloud artifacts repositories create battleship --repository-format=docker --location=$REGION
-gcloud iam service-accounts create battleship-deployer
-for r in roles/run.admin roles/artifactregistry.writer roles/iam.serviceAccountUser; do
-  gcloud projects add-iam-policy-binding $PROJECT \
-    --member="serviceAccount:battleship-deployer@$PROJECT.iam.gserviceaccount.com" --role=$r
+P=project-c9d27649-7397-4366-8f0 REPO=maasapphire-blip/battleship-meena
+gcloud services enable run.googleapis.com artifactregistry.googleapis.com iam.googleapis.com iamcredentials.googleapis.com cloudresourcemanager.googleapis.com
+gcloud iam service-accounts create devin-deployer --display-name "Devin deployer"
+SA=devin-deployer@$P.iam.gserviceaccount.com
+for r in roles/run.admin roles/artifactregistry.admin roles/iam.serviceAccountUser; do
+  gcloud projects add-iam-policy-binding $P --member serviceAccount:$SA --role $r
 done
-gcloud iam workload-identity-pools create github --location=global
-gcloud iam workload-identity-pools providers create-oidc github \
-  --location=global --workload-identity-pool=github \
-  --issuer-uri="https://token.actions.githubusercontent.com" \
+gcloud artifacts repositories create battleship --repository-format=docker --location=us-central1
+gcloud iam workload-identity-pools create github --location=global --display-name=GitHub
+gcloud iam workload-identity-pools providers create-oidc github --location=global --workload-identity-pool=github \
+  --issuer-uri=https://token.actions.githubusercontent.com \
   --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository" \
   --attribute-condition="assertion.repository=='$REPO'"
-gcloud iam service-accounts add-iam-policy-binding \
-  battleship-deployer@$PROJECT.iam.gserviceaccount.com \
-  --role=roles/iam.workloadIdentityUser \
-  --member="principalSet://iam.googleapis.com/projects/$(gcloud projects describe $PROJECT --format='value(projectNumber)')/locations/global/workloadIdentityPools/github/attribute.repository/$REPO"
+PN=$(gcloud projects describe $P --format='value(projectNumber)')
+gcloud iam service-accounts add-iam-policy-binding $SA --role=roles/iam.workloadIdentityUser \
+  --member="principalSet://iam.googleapis.com/projects/$PN/locations/global/workloadIdentityPools/github/attribute.repository/$REPO"
 ```
 
-Then in the GitHub repo: variables `GCP_PROJECT_ID`, `GCP_REGION`; secrets
-`GCP_WORKLOAD_IDENTITY_PROVIDER` (full provider resource name) and `GCP_SERVICE_ACCOUNT`.
+(The deployer SA was also granted `serviceusage.serviceUsageAdmin`, `iam.workloadIdentityPoolAdmin`,
+`iam.serviceAccountAdmin` and `resourcemanager.projectIamAdmin` during setup; those can be removed now
+that the pool exists — the workflow only needs the three roles above.)
 
-Rollback: `gcloud run services update-traffic battleship --to-revisions=<previous>=100`.
+Rollback: `gcloud run services update-traffic battleship --region us-central1 --to-revisions=<previous>=100`.
 
 ## Design decisions
 
